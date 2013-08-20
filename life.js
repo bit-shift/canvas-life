@@ -202,6 +202,7 @@ var Life = {
 
             var clearButton = document.createElement("button");
             clearButton.innerHTML = "Clear";
+            clearButton.setAttribute("tabindex", -1);
             clearButton.addEventListener("click", this.world.clear.bind(this.world));
             canvasContainer.appendChild(clearButton);
 
