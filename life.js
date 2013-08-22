@@ -307,12 +307,14 @@ var CanvasToggleGrid = {
 
 
 var Life = {
-    run: function(world, grid) {
+    init: function(world, grid) {
         this.world = world;
         this.grid = grid;
 
         this.world.create();
         this.grid.create();
+
+        this.hasCanvas = this.grid.testCanvas();
 
         this.grid.listen((function(data) {
             this.world.data = data;
@@ -321,30 +323,31 @@ var Life = {
         this.world.listen((function(data) {
             this.grid.data = data;
         }).bind(this));
+    },
 
+    // Needed to preserve the world's this without bind.
+    worldTick: function() {
+        this.world.tick();
+    },
+
+    // Needed to preserve the world's this without bind.
+    worldClear: function() {
+        this.world.clear();
+    },
+
+    worldSave: function() {},
+
+    worldLoad: function() {},
+    
+    run: function() {
         var canvasContainer = document.getElementById("canvasContainer");
 
-        if (this.grid.testCanvas()) {
-            canvasContainer.appendChild(this.grid.canvas);
+        canvasContainer.appendChild(this.grid.canvas);
 
-            var tickButton = document.createElement("button");
-            tickButton.innerHTML = "Tick";
-            tickButton.addEventListener("click", this.world.tick.bind(this.world));
-            canvasContainer.appendChild(tickButton);
-
-            var clearButton = document.createElement("button");
-            clearButton.innerHTML = "Clear";
-            clearButton.setAttribute("tabindex", -1);
-            clearButton.addEventListener("click", this.world.clear.bind(this.world));
-            canvasContainer.appendChild(clearButton);
-
-            CanvasToggleGrid.startAnimating();
-        } else {
-            var noCanvasErr = document.createElement("p");
-            noCanvasErr.innerHTML = "Your browser does not appear to support the canvas API.";
-            canvasContainer.appendChild(noCanvasErr);
-        }
+        this.grid.startAnimating();
     }
 };
 
-Life.run(World, CanvasToggleGrid);
+Life.init(World, CanvasToggleGrid);
+ko.applyBindings(Life);
+Life.run();
