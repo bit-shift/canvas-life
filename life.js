@@ -151,7 +151,7 @@ var World = {
 
 
 var CanvasToggleGrid = {
-    create: function(width, height, squareSize, data) {
+    create: function(width, height, squareSize) {
         this.width = width || 64;
         this.height = height || 64;
         this.squareSize = squareSize || 8;
@@ -160,16 +160,12 @@ var CanvasToggleGrid = {
         this.canvas.setAttribute("width", this.width * this.squareSize);
         this.canvas.setAttribute("height", this.height * this.squareSize);
 
-        if (data) {  // use existing data object if possible
-            this.data = data;
-        } else {
-            this.data = [];
-            for (var y = 0; y < this.height; y++) {
-                this.data.push([]);
+        this.data = [];
+        for (var y = 0; y < this.height; y++) {
+            this.data.push([]);
 
-                for (var x = 0; x < this.width; x++) {
-                    this.data[y].push(0);
-                }
+            for (var x = 0; x < this.width; x++) {
+                this.data[y].push(0);
             }
         }
 
