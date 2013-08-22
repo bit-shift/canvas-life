@@ -4,8 +4,26 @@ var World = {
     create: function(width, height) {
         this.width = width || 64;
         this.height = height || 64;
+
+        this.listeners = [];
+
         this.clear();
     },
+
+    listen: function(fn) {
+        this.listeners.push(fn);
+    },
+
+    emitData: function() {
+        for (var i = 0; i < this.listeners.length; i++) {
+            try {
+                this.listeners[i](this.data.slice(0));
+            } catch(e) {
+                console.log("Listener failed: " + e)
+            }
+        }
+    },
+
 
     clear: function() {
         this.fill(0);
@@ -21,10 +39,8 @@ var World = {
                 this.data[y].push(val);
             }
         }
-    },
 
-    set: function(x, y, val) {
-        this.data[y][x] = val;
+        this.emitData();
     },
 
     load: function(savedWorld) {
@@ -55,6 +71,8 @@ var World = {
         this.width = newWidth;
         this.height = newHeight;
         this.data = newWorld;
+
+        this.emitData();
     },
 
     save: function () {
@@ -126,11 +144,63 @@ var World = {
                 }
             }
         }
+
+        this.emitData();
     }
 };
 
 
-var Life = {
+var CanvasToggleGrid = {
+    create: function(width, height, squareSize, data) {
+        this.width = width || 64;
+        this.height = height || 64;
+        this.squareSize = squareSize || 8;
+
+        this.canvas = document.createElement("canvas");
+        this.canvas.setAttribute("width", this.width * this.squareSize);
+        this.canvas.setAttribute("height", this.height * this.squareSize);
+
+        if (data) {  // use existing data object if possible
+            this.data = data;
+        } else {
+            this.data = [];
+            for (var y = 0; y < this.height; y++) {
+                this.data.push([]);
+
+                for (var x = 0; x < this.width; x++) {
+                    this.data[y].push(0);
+                }
+            }
+        }
+
+        this.canvas.classList.add("clickable");
+
+        this.drawing = null;
+
+        this.canvas.addEventListener("mousedown", this.startDraw.bind(this));
+        this.canvas.addEventListener("mousemove", this.draw.bind(this));
+        this.canvas.addEventListener("mouseup", this.stopDraw.bind(this));
+        this.canvas.addEventListener("mouseout", this.stopDraw.bind(this));
+
+        this.context = this.canvas.getContext("2d");
+
+        this.listeners = [];
+    },
+
+    listen: function(fn) {
+        this.listeners.push(fn);
+    },
+
+    emitData: function() {
+        for (var i = 0; i < this.listeners.length; i++) {
+            try {
+                this.listeners[i](this.data.slice(0));
+            } catch(e) {
+                console.log("Listener failed: " + e)
+            }
+        }
+    },
+
     testCanvas: function() {
         var c = document.createElement("canvas");
         if (c.getContext) {
@@ -148,23 +218,6 @@ var Life = {
         } else if (window.webkitRequestAnimationFrame) {
             window.webkitRequestAnimationFrame(cb);
         }
-    },
-
-    createCanvas: function() {
-        this.canvas = document.createElement("canvas");
-        this.canvas.setAttribute("width", 512);
-        this.canvas.setAttribute("height", 512);
-
-        this.canvas.classList.add("clickable");
-
-        this.drawing = null;
-
-        this.canvas.addEventListener("mousedown", this.startDraw.bind(this));
-        this.canvas.addEventListener("mousemove", this.draw.bind(this));
-        this.canvas.addEventListener("mouseup", this.stopDraw.bind(this));
-        this.canvas.addEventListener("mouseout", this.stopDraw.bind(this));
-
-        this.context = this.canvas.getContext("2d");
     },
 
     normalizeXY: function(evt) {
@@ -189,10 +242,10 @@ var Life = {
 
     startDraw: function(evt) {
         coords = this.normalizeXY(evt);
-        var squareX = Math.floor(coords.x / 8);
-        var squareY = Math.floor(coords.y / 8);
+        var squareX = Math.floor(coords.x / this.squareSize);
+        var squareY = Math.floor(coords.y / this.squareSize);
 
-        if (this.world.data[squareY][squareX] === 0) {
+        if (this.data[squareY][squareX] === 0) {
             this.drawing = 1;
         } else {
             this.drawing = 0;
@@ -207,11 +260,12 @@ var Life = {
 
     draw: function(evt) {
         coords = this.normalizeXY(evt);
-        var squareX = Math.floor(coords.x / 8);
-        var squareY = Math.floor(coords.y / 8);
+        var squareX = Math.floor(coords.x / this.squareSize);
+        var squareY = Math.floor(coords.y / this.squareSize);
 
         if (this.drawing !== null) {
-            this.world.set(squareX, squareY, this.drawing);
+            this.data[squareY][squareX] = this.drawing;
+            this.emitData();
         }
     },
 
@@ -226,40 +280,52 @@ var Life = {
     },
 
     render: function(dt) {
-        for (var y = 0; y < 64; y++) {
-            for (var x = 0; x < 64; x++) {
-                var squareX = x * 8;
-                var squareY = y * 8;
+        for (var y = 0; y < this.height; y++) {
+            for (var x = 0; x < this.width; x++) {
+                var squareX = x * this.squareSize;
+                var squareY = y * this.squareSize;
 
-                if (this.world.data[y][x] === 1) {
+                if (this.data[y][x] === 1) {
                     this.context.fillStyle = "rgb(30, 170, 130)";
                 } else {
                     this.context.fillStyle = "rgb(100, 230, 190)";
                 }
 
-                this.context.fillRect(squareX, squareY, 8, 8);
+                this.context.fillRect(squareX, squareY, this.squareSize, this.squareSize);
 
-                if (this.world.data[y][x] === 1) {
+                if (this.data[y][x] === 1) {
                     this.context.fillStyle = "rgb(30, 170, 130)";
                 } else {
                     this.context.fillStyle = "rgb(200, 255, 240)";
                 }
 
-                this.context.fillRect(squareX + 1, squareY + 1, 6, 6);
+                this.context.fillRect(squareX + 1, squareY + 1, this.squareSize - 2, this.squareSize - 2);
             }
         }
-    },
+    }
+};
 
-    run: function(world) {
+
+var Life = {
+    run: function(world, grid) {
         this.world = world;
+        this.grid = grid;
 
         this.world.create();
+        this.grid.create();
+
+        this.grid.listen((function(data) {
+            this.world.data = data;
+        }).bind(this));
+
+        this.world.listen((function(data) {
+            this.grid.data = data;
+        }).bind(this));
 
         var canvasContainer = document.getElementById("canvasContainer");
 
-        if (this.testCanvas()) {
-            this.createCanvas();
-            canvasContainer.appendChild(this.canvas);
+        if (this.grid.testCanvas()) {
+            canvasContainer.appendChild(this.grid.canvas);
 
             var tickButton = document.createElement("button");
             tickButton.innerHTML = "Tick";
@@ -272,7 +338,7 @@ var Life = {
             clearButton.addEventListener("click", this.world.clear.bind(this.world));
             canvasContainer.appendChild(clearButton);
 
-            this.startAnimating();
+            CanvasToggleGrid.startAnimating();
         } else {
             var noCanvasErr = document.createElement("p");
             noCanvasErr.innerHTML = "Your browser does not appear to support the canvas API.";
@@ -281,4 +347,4 @@ var Life = {
     }
 };
 
-Life.run(World);
+Life.run(World, CanvasToggleGrid);
