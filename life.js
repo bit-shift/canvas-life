@@ -308,6 +308,8 @@ var Life = {
         this.world.listen((function(data) {
             this.grid.data = data;
         }).bind(this));
+
+        this.playing = ko.observable(false);
     },
 
     worldCode: ko.observable(""),
@@ -320,6 +322,14 @@ var Life = {
     // Needed to preserve the world's this without bind.
     worldClear: function() {
         this.world.clear();
+    },
+
+    worldPlay: function() {
+        this.playing(true);
+    },
+
+    worldPause: function() {
+        this.playing(false);
     },
 
     worldSave: function() {
@@ -347,6 +357,12 @@ var Life = {
         canvasContainer.appendChild(this.grid.canvas);
 
         this.grid.startAnimating();
+
+        setInterval((function(){
+            if (this.playing()) {
+                this.worldTick();
+            }
+        }).bind(this), 500);
     }
 };
 
