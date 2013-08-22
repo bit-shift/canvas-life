@@ -323,11 +323,21 @@ var Life = {
     },
 
     worldSave: function() {
-        this.worldCode(this.world.save().replace("64:64:", ""));
+        var worldCodeArray = this.world.save().replace("64:64:", "").split("");
+
+        var worldCode = "";
+        while (worldCodeArray.length > 0) {
+            worldCode += worldCodeArray.splice(0, Math.min(72, worldCodeArray.length)).join("");
+            if (worldCodeArray.length > 0) {
+                worldCode += "\n";
+            }
+        }
+
+        this.worldCode(worldCode);
     },
 
     worldLoad: function() {
-        this.world.load("64:64:" + this.worldCode());
+        this.world.load("64:64:" + this.worldCode().split("\n").join(""));
         this.worldCode("");
     },
     
