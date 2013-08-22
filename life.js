@@ -27,6 +27,36 @@ var World = {
         this.data[y][x] = val;
     },
 
+    load: function(savedWorld) {
+        savedWorld = savedWorld.split(":");
+
+        var newWidth = parseInt(savedWorld[0]);
+        var newHeight = parseInt(savedWorld[1]);
+
+        var flatWorld = [];
+
+        for (var i = 0; i < savedWorld[2].length; i++) {
+            var thisBlock = this.encodeChars.indexOf(savedWorld[2][i]);
+            for (var j = 5; j >= 0; j--) {
+                flatWorld.push((thisBlock & (1 << j)) >> j)
+            }
+        }
+
+        var newWorld = [];
+
+        for (var y = 0; y < newHeight; y++) {
+            newWorld.push([]);
+
+            for (var x = 0; x < newWidth; x++) {
+                newWorld[y].push(flatWorld.shift());
+            }
+        }
+
+        this.width = newWidth;
+        this.height = newHeight;
+        this.data = newWorld;
+    },
+
     save: function () {
         var worldPrefix = "" + this.width;
         worldPrefix += ":" + this.height + ":";
