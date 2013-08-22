@@ -26,10 +26,10 @@
           <button data-bind="click: worldTick">Tick</button>
           <button data-bind="click: worldClear">Clear</button>
         </p>
-        <textarea class="verticalBlock"></textarea>
+        <textarea class="verticalBlock" data-bind="value: worldCode, valueUpdate: 'afterkeydown'"></textarea>
         <p>
           <button data-bind="click: worldSave">Save world to text</button>
-          <button data-bind="click: worldLoad">Load world from text</button>
+          <button data-bind="click: worldLoad, enable: worldCode().length > 0">Load world from text</button>
         </p>
       </form>
     </div>

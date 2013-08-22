@@ -321,6 +321,8 @@ var Life = {
         }).bind(this));
     },
 
+    worldCode: ko.observable(""),
+
     // Needed to preserve the world's this without bind.
     worldTick: function() {
         this.world.tick();
@@ -331,9 +333,14 @@ var Life = {
         this.world.clear();
     },
 
-    worldSave: function() {},
+    worldSave: function() {
+        this.worldCode(this.world.save().replace("64:64:", ""));
+    },
 
-    worldLoad: function() {},
+    worldLoad: function() {
+        this.world.load("64:64:" + this.worldCode());
+        this.worldCode("");
+    },
     
     run: function() {
         var canvasContainer = document.getElementById("canvasContainer");
