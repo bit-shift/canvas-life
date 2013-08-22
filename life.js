@@ -217,21 +217,10 @@ var CanvasToggleGrid = {
     },
 
     normalizeXY: function(evt) {
-        var normalX = 0;
-        var normalY = 0;
+        var rect = this.canvas.getBoundingClientRect();
 
-        if (evt.x !== undefined && evt.y !== undefined) {
-            normalX = evt.x;
-            normalY = evt.y;
-        } else {  // Firefox, fun time!
-            normalX = evt.clientX + document.body.scrollLeft +
-                document.documentElement.scrollLeft;
-            normalY = evt.clientY + document.body.scrollTop +
-                document.documentElement.scrollTop;
-        }
-
-        normalX -= this.canvas.offsetLeft;
-        normalY -= this.canvas.offsetTop;
+        var normalX = evt.clientX - rect.left;
+        var normalY = evt.clientY - rect.top;
 
         return { "x": normalX, "y": normalY };
     },
