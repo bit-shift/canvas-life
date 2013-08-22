@@ -1,4 +1,4 @@
-var World = _.extend({}, {
+var World = {
     create: function(width, height) {
         this.width = width || 64;
         this.height = height || 64;
@@ -61,7 +61,7 @@ var World = _.extend({}, {
             }
         }
     }
-});
+};
 
 
 var Life = {
