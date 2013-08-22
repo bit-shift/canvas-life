@@ -25,6 +25,40 @@ var World = {
         this.data[y][x] = val;
     },
 
+    save: function () {
+        var worldPrefix = "" + this.width;
+        worldPrefix += ":" + this.height + ":";
+
+        var worldData = [];
+
+        var nextBlock = [];
+        for (var y = 0; y < this.height; y++) {
+            for (var x = 0; x < this.width; x++) {
+                nextBlock.push(this.data[y][x]);
+
+                if (nextBlock.length === 8) {
+                    var blockValue = 0;
+                    for (var i = 0; i < 8; i++) {
+                        blockValue += nextBlock.shift() << (7 - i);
+                    }
+
+                    worldData.push(blockValue);
+                }
+            }
+        }
+
+        if (nextBlock.length !== 0) {
+            var blockValue = 0;
+            for (var i = 0; i < nextBlock.length; i++) {
+                blockValue += nextBlock[i] << (7 - i);
+            }
+
+            worldData.push(blockValue);
+        }
+
+        return worldPrefix + Iuppiter.Base64.encode(Iuppiter.compress(worldData));
+    },
+
     tick: function() {
         var squareNeighbours = [];
         for (var y = 0; y < this.height; y++) {
