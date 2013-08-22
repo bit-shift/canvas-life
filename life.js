@@ -1,4 +1,6 @@
 var World = {
+    encodeChars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+
     create: function(width, height) {
         this.width = width || 64;
         this.height = height || 64;
@@ -29,20 +31,20 @@ var World = {
         var worldPrefix = "" + this.width;
         worldPrefix += ":" + this.height + ":";
 
-        var worldData = [];
+        var worldData = "";
 
         var nextBlock = [];
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
                 nextBlock.push(this.data[y][x]);
 
-                if (nextBlock.length === 8) {
+                if (nextBlock.length === 6) {
                     var blockValue = 0;
-                    for (var i = 0; i < 8; i++) {
-                        blockValue += nextBlock.shift() << (7 - i);
+                    for (var i = 0; i < 6; i++) {
+                        blockValue += nextBlock.shift() << (5 - i);
                     }
 
-                    worldData.push(blockValue);
+                    worldData += this.encodeChars[blockValue];
                 }
             }
         }
@@ -50,13 +52,13 @@ var World = {
         if (nextBlock.length !== 0) {
             var blockValue = 0;
             for (var i = 0; i < nextBlock.length; i++) {
-                blockValue += nextBlock[i] << (7 - i);
+                blockValue += nextBlock[i] << (5 - i);
             }
 
-            worldData.push(blockValue);
+            worldData += this.encodeChars[blockValue];
         }
 
-        return worldPrefix + Iuppiter.Base64.encode(Iuppiter.compress(worldData));
+        return worldPrefix + worldData;
     },
 
     tick: function() {
