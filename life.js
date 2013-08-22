@@ -308,20 +308,24 @@ var Life = {
         this.world.listen((function(data) {
             this.grid.data = data;
         }).bind(this));
-
-        this.playing = ko.observable(false);
     },
+
+    playing: ko.observable(false),
+
+    cycles: ko.observable(0),
 
     worldCode: ko.observable(""),
 
     // Needed to preserve the world's this without bind.
     worldTick: function() {
         this.world.tick();
+        this.cycles(this.cycles() + 1);
     },
 
     // Needed to preserve the world's this without bind.
     worldClear: function() {
         this.world.clear();
+        this.cycles(0);
     },
 
     worldPlay: function() {

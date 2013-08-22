@@ -28,6 +28,7 @@
           <button data-bind="click: worldPlay, disable: playing">Play</button>
           <button data-bind="click: worldPause, enable: playing">Pause</button>
         </p>
+        <p>Cycles: <!-- ko text: cycles --><!-- /ko --></p>
         <textarea class="verticalBlock" data-bind="value: worldCode, valueUpdate: 'afterkeydown'"></textarea>
         <p>
           <button data-bind="click: worldSave, disable: playing">Save world to text</button>
