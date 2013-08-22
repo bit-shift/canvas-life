@@ -353,6 +353,7 @@ var Life = {
     worldLoad: function() {
         this.world.load("64:64:" + this.worldCode().split("\n").join(""));
         this.worldCode("");
+        this.cycles(0);
     },
     
     run: function() {
