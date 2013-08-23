@@ -1,9 +1,12 @@
 var World = {
     encodeChars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
 
-    create: function(width, height) {
+    create: function(width, height, born, survive) {
         this.width = width || 64;
         this.height = height || 64;
+
+        this.born = born || [3];
+        this.survive = survive || [2, 3];
 
         this.listeners = [];
 
@@ -134,11 +137,11 @@ var World = {
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
                 if (this.data[y][x] === 1) {
-                    if (squareNeighbours[y][x] < 2 || squareNeighbours[y][x] > 3) {
+                    if (this.survive.indexOf(squareNeighbours[y][x]) < 0) {
                         this.data[y][x] = 0;
                     }
                 } else {
-                    if (squareNeighbours[y][x] === 3) {
+                    if (this.born.indexOf(squareNeighbours[y][x]) > -1) {
                         this.data[y][x] = 1;
                     }
                 }
@@ -308,6 +311,34 @@ var Life = {
         this.world.listen((function(data) {
             this.grid.data = data;
         }).bind(this));
+
+        // abuse ko.computed to update the world when born's values change
+        this.bornUpdater = ko.computed(function() {
+            var newBorn = [];
+            for (var n = 0; n <= 8; n++) {
+                if (this.born[n]()) {
+                    newBorn.push(n);
+                }
+            }
+
+            this.world.born = newBorn.slice(0);
+
+            return newBorn;
+        }, this);
+
+        // abuse ko.computed to update the world when survive's values change
+        this.surviveUpdater = ko.computed(function() {
+            var newSurvive = [];
+            for (var n = 0; n <= 8; n++) {
+                if (this.survive[n]()) {
+                    newSurvive.push(n);
+                }
+            }
+
+            this.world.survive = newSurvive.slice(0);
+
+            return newSurvive;
+        }, this);
     },
 
     playing: ko.observable(false),
@@ -315,6 +346,30 @@ var Life = {
     cycles: ko.observable(0),
 
     worldCode: ko.observable(""),
+
+    born: [
+        ko.observable(false), // 0 neighbours
+        ko.observable(false), // 1 neighbour
+        ko.observable(false), // 2 neighbours
+        ko.observable(true),  // 3 neighbours
+        ko.observable(false), // 4 neighbours
+        ko.observable(false), // 5 neighbours
+        ko.observable(false), // 6 neighbours
+        ko.observable(false), // 7 neighbours
+        ko.observable(false)  // 8 neighbours
+        ],
+
+    survive: [
+        ko.observable(false), // 0 neighbours
+        ko.observable(false), // 1 neighbour
+        ko.observable(true),  // 2 neighbours
+        ko.observable(true),  // 3 neighbours
+        ko.observable(false), // 4 neighbours
+        ko.observable(false), // 5 neighbours
+        ko.observable(false), // 6 neighbours
+        ko.observable(false), // 7 neighbours
+        ko.observable(false)  // 8 neighbours
+        ],
 
     // Needed to preserve the world's this without bind.
     worldTick: function() {
