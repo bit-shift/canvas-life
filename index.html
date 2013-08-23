@@ -27,8 +27,13 @@
           <button data-bind="click: worldClear, disable: playing">Clear</button>
           <button data-bind="click: worldPlay, disable: playing">Play</button>
           <button data-bind="click: worldPause, enable: playing">Pause</button>
+          <p>Cycles: <!-- ko text: cycles --><!-- /ko --></p>
+          <p>Cycles per second:
+            <button data-bind="click: lessTicks, enable: ticksPerSecond() > 1 && !playing()">-</button>
+            <label data-bind="text: ticksPerSecond"></label>
+            <button data-bind="click: moreTicks, enable: ticksPerSecond() < 60 && !playing()">+</button>
+          </p>
         </p>
-        <p>Cycles: <!-- ko text: cycles --><!-- /ko --></p>
         <p class="verticalBlock">
           <h3>Save/Load</h3>
           <textarea class="verticalBlock" data-bind="value: worldCode, valueUpdate: 'afterkeydown'"></textarea>

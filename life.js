@@ -347,6 +347,16 @@ var Life = {
 
     worldCode: ko.observable(""),
 
+    ticksPerSecond: ko.observable(2),
+
+    lessTicks: function() {
+        this.ticksPerSecond(this.ticksPerSecond() - 1);
+    },
+
+    moreTicks: function() {
+        this.ticksPerSecond(this.ticksPerSecond() + 1);
+    },
+
     born: [
         ko.observable(false), // 0 neighbours
         ko.observable(false), // 1 neighbour
@@ -385,6 +395,7 @@ var Life = {
 
     worldPlay: function() {
         this.playing(true);
+        this.autoTick();
     },
 
     worldPause: function() {
@@ -410,6 +421,13 @@ var Life = {
         this.worldCode("");
         this.cycles(0);
     },
+
+    autoTick: function() {
+        if (this.playing()) {
+            this.worldTick();
+            setTimeout(this.autoTick.bind(this), Math.floor(1000 / this.ticksPerSecond()));
+        }
+    },
     
     run: function() {
         var canvasContainer = document.getElementById("canvasContainer");
@@ -417,12 +435,6 @@ var Life = {
         canvasContainer.appendChild(this.grid.canvas);
 
         this.grid.startAnimating();
-
-        setInterval((function(){
-            if (this.playing()) {
-                this.worldTick();
-            }
-        }).bind(this), 500);
     }
 };
 
