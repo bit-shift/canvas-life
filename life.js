@@ -248,7 +248,11 @@ var Life = {
         }, this);
 
         this.worldUpdater = (function() {
-            this.world = new World(this.worldWidth(), this.worldHeight(),
+            // get ints whether or not ko has fucked up the types
+            var worldWidth = parseInt("" + this.worldWidth());
+            var worldHeight = parseInt("" + this.worldHeight());
+
+            this.world = new World(worldWidth, worldHeight,
                      this.bornAggregate(), this.surviveAggregate());
 
             this.gridUpdater();  // run manually to rebuild the grid
