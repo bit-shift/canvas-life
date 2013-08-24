@@ -28,14 +28,6 @@ CellGrid.prototype.clear = function() {
     this.fill(0);
 };
 
-CellGrid.prototype.save = function() {
-    return {
-        "width": this.width,
-        "height": this.height,
-        "data": this.data.slice(0)
-    };
-};
-
 
 var ListenableGrid = function(width, height) {
     CellGrid.call(this, width, height);
