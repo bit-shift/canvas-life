@@ -1,294 +1,221 @@
-var World = {
-    encodeChars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+var CellGrid = function(width, height) {
+    this.width = width || 64;
+    this.height = height || 64;
+    this.data = [];
 
-    create: function(width, height, born, survive) {
-        this.width = width || 64;
-        this.height = height || 64;
+    for (var y = 0; y < this.height; y++) {
+        this.data.push([]);
 
-        this.born = born || [3];
-        this.survive = survive || [2, 3];
+        for (var x = 0; x < this.width; x++) {
+            this.data[y].push(0);
+        }
+    }
+};
 
-        this.listeners = [];
+CellGrid.prototype.set = function(x, y, val) {
+    this.data[y][x] = val;
+};
 
-        this.clear();
-    },
+CellGrid.prototype.fill = function(val) {
+    for (var y = 0; y < this.height; y++) {
+        for (var x = 0; x < this.width; x++) {
+            this.set(x, y, val);
+        }
+    }
+};
 
-    listen: function(fn) {
-        this.listeners.push(fn);
-    },
+CellGrid.prototype.clear = function() {
+    this.fill(0);
+};
 
-    emitData: function() {
-        for (var i = 0; i < this.listeners.length; i++) {
+CellGrid.prototype.save = function() {
+    return {
+        "width": this.width,
+        "height": this.height,
+        "data": this.data.slice(0)
+    };
+};
+
+
+var ListenableGrid = function(width, height) {
+    CellGrid.call(this, width, height);
+    this.listeners = {};
+    this.nextListenerId = 0;
+};
+ListenableGrid.prototype = new CellGrid();
+ListenableGrid.prototype.constructor = ListenableGrid;
+
+ListenableGrid.prototype.addListener = function(listener) {
+    this.listeners[this.nextListenerId] = listener;
+    return this.nextListenerId++;
+};
+
+ListenableGrid.prototype.removeListener = function(listenerId) {
+    if (this.listeners[listenerId]) {
+        delete this.listeners[listenerId];
+    } else {
+        throw ("No such listener (id " + listenerId + ")");
+    }
+};
+
+ListenableGrid.prototype.emitUpdate = function() {
+    for (var listenerId in this.listeners) {
+        if (this.listeners.hasOwnProperty(listenerId)) {
             try {
-                this.listeners[i](this.data.slice(0));
-            } catch(e) {
-                console.log("Listener failed: " + e)
+                this.listeners[listenerId](this.data.slice(0));
+            } catch (e) {
+                console.error("Listener " + listenerId + " failed: " + e);
             }
         }
-    },
+    }
+};
+
+ListenableGrid.prototype.set = function(x, y, val) {
+    CellGrid.prototype.set.call(this, x, y, val);
+    this.emitUpdate();
+};
 
 
-    clear: function() {
-        this.fill(0);
-    },
+var World = function(width, height, born, survive) {
+    ListenableGrid.call(this, width, height);
+    this.born = born || [3];
+    this.survive = survive || [2, 3];
+};
+World.prototype = new ListenableGrid();
+World.prototype.constructor = World;
 
-    fill: function(val) {
-        this.data = [];
+World.prototype.tick = function() {
+    var squareNeighbours = [];
+    for (var y = 0; y < this.height; y++) {
+        squareNeighbours.push([]);
 
-        for (var y = 0; y < this.height; y++) {
-            this.data.push([]);
+        for (var x = 0; x < this.width; x++) {
+            squareNeighbours[y].push(0);
 
-            for (var x = 0; x < this.width; x++) {
-                this.data[y].push(val);
+            for (var yOffset = -1; yOffset <= 1; yOffset++) {
+                for (var xOffset = -1; xOffset <= 1; xOffset++) {
+                    // wrap coordinates
+                    var wrappedY = (this.height + y + yOffset) % this.height;
+                    var wrappedX = (this.width + x + xOffset) % this.width;
+
+                    squareNeighbours[y][x] += this.data[wrappedY][wrappedX];
+                }
             }
+
+            squareNeighbours[y][x] -= this.data[y][x];
         }
+    }
 
-        this.emitData();
-    },
-
-    load: function(savedWorld) {
-        savedWorld = savedWorld.split(":");
-
-        var newWidth = parseInt(savedWorld[0]);
-        var newHeight = parseInt(savedWorld[1]);
-
-        var flatWorld = [];
-
-        for (var i = 0; i < savedWorld[2].length; i++) {
-            var thisBlock = this.encodeChars.indexOf(savedWorld[2][i]);
-            for (var j = 5; j >= 0; j--) {
-                flatWorld.push((thisBlock & (1 << j)) >> j)
-            }
-        }
-
-        var newWorld = [];
-
-        for (var y = 0; y < newHeight; y++) {
-            newWorld.push([]);
-
-            for (var x = 0; x < newWidth; x++) {
-                newWorld[y].push(flatWorld.shift());
-            }
-        }
-
-        this.width = newWidth;
-        this.height = newHeight;
-        this.data = newWorld;
-
-        this.emitData();
-    },
-
-    save: function () {
-        var worldPrefix = "" + this.width;
-        worldPrefix += ":" + this.height + ":";
-
-        var worldData = "";
-
-        var nextBlock = [];
-        for (var y = 0; y < this.height; y++) {
-            for (var x = 0; x < this.width; x++) {
-                nextBlock.push(this.data[y][x]);
-
-                if (nextBlock.length === 6) {
-                    var blockValue = 0;
-                    for (var i = 0; i < 6; i++) {
-                        blockValue += nextBlock.shift() << (5 - i);
-                    }
-
-                    worldData += this.encodeChars[blockValue];
+    for (var y = 0; y < this.height; y++) {
+        for (var x = 0; x < this.width; x++) {
+            if (this.data[y][x] === 1) {
+                if (this.survive.indexOf(squareNeighbours[y][x]) < 0) {
+                    this.set(x, y, 0);
+                }
+            } else {
+                if (this.born.indexOf(squareNeighbours[y][x]) > -1) {
+                    this.set(x, y, 1);
                 }
             }
         }
-
-        if (nextBlock.length !== 0) {
-            var blockValue = 0;
-            for (var i = 0; i < nextBlock.length; i++) {
-                blockValue += nextBlock[i] << (5 - i);
-            }
-
-            worldData += this.encodeChars[blockValue];
-        }
-
-        return worldPrefix + worldData;
-    },
-
-    tick: function() {
-        var squareNeighbours = [];
-        for (var y = 0; y < this.height; y++) {
-            squareNeighbours.push([]);
-
-            for (var x = 0; x < this.width; x++) {
-                squareNeighbours[y].push(0);
-
-                for (var yOffset = -1; yOffset <= 1; yOffset++) {
-                    for (var xOffset = -1; xOffset <= 1; xOffset++) {
-                        // wrap coordinates
-                        var wrappedY = (this.height + y + yOffset) % this.height;
-                        var wrappedX = (this.width + x + xOffset) % this.width;
-
-                        squareNeighbours[y][x] += this.data[wrappedY][wrappedX];
-                    }
-                }
-
-                squareNeighbours[y][x] -= this.data[y][x];
-            }
-        }
-
-        for (var y = 0; y < this.height; y++) {
-            for (var x = 0; x < this.width; x++) {
-                if (this.data[y][x] === 1) {
-                    if (this.survive.indexOf(squareNeighbours[y][x]) < 0) {
-                        this.data[y][x] = 0;
-                    }
-                } else {
-                    if (this.born.indexOf(squareNeighbours[y][x]) > -1) {
-                        this.data[y][x] = 1;
-                    }
-                }
-            }
-        }
-
-        this.emitData();
     }
 };
 
 
-var CanvasToggleGrid = {
-    create: function(width, height, squareSize) {
-        this.width = width || 64;
-        this.height = height || 64;
-        this.squareSize = squareSize || 8;
+var CanvasGrid = function(width, height, squareSize) {
+    ListenableGrid.call(this, width, height);
+    this.squareSize = squareSize || 8;
 
-        this.canvas = document.createElement("canvas");
-        this.canvas.setAttribute("width", this.width * this.squareSize);
-        this.canvas.setAttribute("height", this.height * this.squareSize);
+    this.canvas = document.createElement("canvas");
+    this.canvas.setAttribute("width", this.width * this.squareSize);
+    this.canvas.setAttribute("height", this.height * this.squareSize);
 
-        this.data = [];
-        for (var y = 0; y < this.height; y++) {
-            this.data.push([]);
+    this.canvas.addEventListener("mousedown", this.startDraw.bind(this));
+    this.canvas.addEventListener("mousemove", this.draw.bind(this));
+    this.canvas.addEventListener("mouseup", this.stopDraw.bind(this));
+    this.canvas.addEventListener("mouseout", this.stopDraw.bind(this));
+    this.canvas.classList.add("clickable");
+    this.drawing = null;
 
-            for (var x = 0; x < this.width; x++) {
-                this.data[y].push(0);
+    this.context = this.canvas.getContext("2d");
+};
+CanvasGrid.prototype = new ListenableGrid();
+CanvasGrid.prototype.constructor = CanvasGrid;
+
+CanvasGrid.prototype.testCanvas = function() {
+    var c = document.createElement("canvas");
+    if (c.getContext) {
+        return true;
+    } else {
+        return false;
+    }
+};
+
+CanvasGrid.prototype.squareXY = function(evt) {
+    var rect = this.canvas.getBoundingClientRect();
+
+    var normalX = evt.clientX - rect.left;
+    var normalY = evt.clientY - rect.top;
+
+    return {
+        "x": Math.floor(normalX / this.squareSize),
+        "y": Math.floor(normalY / this.squareSize)
+    };
+};
+
+CanvasGrid.prototype.startDraw = function(evt) {
+    coords = this.squareXY(evt);
+
+    if (this.data[coords.y][coords.x] === 0) {
+        this.drawing = 1;
+    } else {
+        this.drawing = 0;
+    }
+
+    this.draw(evt);
+};
+
+CanvasGrid.prototype.stopDraw = function(evt) {
+    this.drawing = null;
+};
+
+CanvasGrid.prototype.draw = function(evt) {
+    coords = this.squareXY(evt);
+
+    if (this.drawing !== null) {
+        this.set(coords.x, coords.y, this.drawing);
+    }
+};
+
+CanvasGrid.prototype.animate = function(timestamp) {
+    this.render();
+
+    (window.requestAnimationFrame ||
+     window.mozRequestAnimationFrame ||
+     window.webkitRequestAnimationFrame)(this.animate.bind(this));
+};
+
+CanvasGrid.prototype.render = function(dt) {
+    for (var y = 0; y < this.height; y++) {
+        for (var x = 0; x < this.width; x++) {
+            var squareX = x * this.squareSize;
+            var squareY = y * this.squareSize;
+
+            if (this.data[y][x] === 1) {
+                this.context.fillStyle = "rgb(30, 170, 130)";
+            } else {
+                this.context.fillStyle = "rgb(100, 230, 190)";
             }
-        }
 
-        this.canvas.classList.add("clickable");
+            this.context.fillRect(squareX, squareY, this.squareSize, this.squareSize);
 
-        this.drawing = null;
-
-        this.canvas.addEventListener("mousedown", this.startDraw.bind(this));
-        this.canvas.addEventListener("mousemove", this.draw.bind(this));
-        this.canvas.addEventListener("mouseup", this.stopDraw.bind(this));
-        this.canvas.addEventListener("mouseout", this.stopDraw.bind(this));
-
-        this.context = this.canvas.getContext("2d");
-
-        this.listeners = [];
-    },
-
-    listen: function(fn) {
-        this.listeners.push(fn);
-    },
-
-    emitData: function() {
-        for (var i = 0; i < this.listeners.length; i++) {
-            try {
-                this.listeners[i](this.data.slice(0));
-            } catch(e) {
-                console.log("Listener failed: " + e)
+            if (this.data[y][x] === 1) {
+                this.context.fillStyle = "rgb(30, 170, 130)";
+            } else {
+                this.context.fillStyle = "rgb(200, 255, 240)";
             }
-        }
-    },
 
-    testCanvas: function() {
-        var c = document.createElement("canvas");
-        if (c.getContext) {
-            return true;
-        } else {
-            return false;
-        }
-    },
-
-    reqAnimFrame: function(cb) {
-        if (window.requestAnimationFrame) {
-            window.requestAnimationFrame(cb);
-        } else if (window.mozRequestAnimationFrame) {
-            window.mozRequestAnimationFrame(cb);
-        } else if (window.webkitRequestAnimationFrame) {
-            window.webkitRequestAnimationFrame(cb);
-        }
-    },
-
-    normalizeXY: function(evt) {
-        var rect = this.canvas.getBoundingClientRect();
-
-        var normalX = evt.clientX - rect.left;
-        var normalY = evt.clientY - rect.top;
-
-        return { "x": normalX, "y": normalY };
-    },
-
-    startDraw: function(evt) {
-        coords = this.normalizeXY(evt);
-        var squareX = Math.floor(coords.x / this.squareSize);
-        var squareY = Math.floor(coords.y / this.squareSize);
-
-        if (this.data[squareY][squareX] === 0) {
-            this.drawing = 1;
-        } else {
-            this.drawing = 0;
-        }
-
-        this.draw(evt);
-    },
-
-    stopDraw: function(evt) {
-        this.drawing = null;
-    },
-
-    draw: function(evt) {
-        coords = this.normalizeXY(evt);
-        var squareX = Math.floor(coords.x / this.squareSize);
-        var squareY = Math.floor(coords.y / this.squareSize);
-
-        if (this.drawing !== null) {
-            this.data[squareY][squareX] = this.drawing;
-            this.emitData();
-        }
-    },
-
-    startAnimating: function() {
-        this.animate(-1);
-    },
-
-    animate: function(timestamp) {
-        this.render();
-
-        this.reqAnimFrame(this.animate.bind(this));
-    },
-
-    render: function(dt) {
-        for (var y = 0; y < this.height; y++) {
-            for (var x = 0; x < this.width; x++) {
-                var squareX = x * this.squareSize;
-                var squareY = y * this.squareSize;
-
-                if (this.data[y][x] === 1) {
-                    this.context.fillStyle = "rgb(30, 170, 130)";
-                } else {
-                    this.context.fillStyle = "rgb(100, 230, 190)";
-                }
-
-                this.context.fillRect(squareX, squareY, this.squareSize, this.squareSize);
-
-                if (this.data[y][x] === 1) {
-                    this.context.fillStyle = "rgb(30, 170, 130)";
-                } else {
-                    this.context.fillStyle = "rgb(200, 255, 240)";
-                }
-
-                this.context.fillRect(squareX + 1, squareY + 1, this.squareSize - 2, this.squareSize - 2);
-            }
+            this.context.fillRect(squareX + 1, squareY + 1, this.squareSize - 2, this.squareSize - 2);
         }
     }
 };
@@ -299,16 +226,13 @@ var Life = {
         this.world = world;
         this.grid = grid;
 
-        this.world.create();
-        this.grid.create();
-
         this.hasCanvas = this.grid.testCanvas();
 
-        this.grid.listen((function(data) {
+        this.grid.addListener((function(data) {
             this.world.data = data;
         }).bind(this));
 
-        this.world.listen((function(data) {
+        this.world.addListener((function(data) {
             this.grid.data = data;
         }).bind(this));
 
@@ -434,10 +358,10 @@ var Life = {
 
         canvasContainer.appendChild(this.grid.canvas);
 
-        this.grid.startAnimating();
+        this.grid.animate();
     }
 };
 
-Life.init(World, CanvasToggleGrid);
+Life.init(new World(), new CanvasGrid());
 ko.applyBindings(Life);
 Life.run();
