@@ -134,7 +134,7 @@ var CanvasGrid = function(width, height, squareSize) {
 CanvasGrid.prototype = new ListenableGrid();
 CanvasGrid.prototype.constructor = CanvasGrid;
 
-CanvasGrid.prototype.testCanvas = function() {
+CanvasGrid.testCanvas = function() {
     var c = document.createElement("canvas");
     if (c.getContext) {
         return true;
@@ -214,22 +214,9 @@ CanvasGrid.prototype.render = function(dt) {
 
 
 var Life = {
-    init: function(world, grid) {
-        this.world = world;
-        this.grid = grid;
-
-        this.hasCanvas = this.grid.testCanvas();
-
-        this.grid.addListener((function(data) {
-            this.world.data = data;
-        }).bind(this));
-
-        this.world.addListener((function(data) {
-            this.grid.data = data;
-        }).bind(this));
-
+    init: function() {
         // abuse ko.computed to update the world when born's values change
-        this.bornUpdater = ko.computed(function() {
+        this.bornAggregate = ko.computed(function() {
             var newBorn = [];
             for (var n = 0; n <= 8; n++) {
                 if (this.born[n]()) {
@@ -237,13 +224,15 @@ var Life = {
                 }
             }
 
-            this.world.born = newBorn.slice(0);
+            if (this.world) {
+                this.world.born = newBorn.slice(0);
+            }
 
             return newBorn;
         }, this);
 
         // abuse ko.computed to update the world when survive's values change
-        this.surviveUpdater = ko.computed(function() {
+        this.surviveAggregate = ko.computed(function() {
             var newSurvive = [];
             for (var n = 0; n <= 8; n++) {
                 if (this.survive[n]()) {
@@ -251,11 +240,50 @@ var Life = {
                 }
             }
 
-            this.world.survive = newSurvive.slice(0);
+            if (this.world) {
+                this.world.survive = newSurvive.slice(0);
+            }
 
             return newSurvive;
         }, this);
+
+        this.worldUpdater = (function() {
+            this.world = new World(this.worldWidth(), this.worldHeight(),
+                     this.bornAggregate(), this.surviveAggregate());
+
+            this.gridUpdater();  // run manually to rebuild the grid
+        }).bind(this);
+
+        this.gridUpdater = (function() {
+            var canvasContainer = document.getElementById("canvasContainer");
+            while (canvasContainer.firstChild) {
+                canvasContainer.removeChild(canvasContainer.firstChild);
+            }
+
+            this.grid = new CanvasGrid(this.worldWidth.peek(), this.worldHeight.peek(), this.scale());
+
+            this.grid.data = this.world.data.slice(0);
+
+            this.grid.addListener((function(data) {
+                this.world.data = data;
+            }).bind(this));
+
+            this.world.addListener((function(data) {
+                this.grid.data = data;
+            }).bind(this));
+
+            canvasContainer.appendChild(this.grid.canvas);
+            this.grid.animate();
+        }).bind(this);
+
+        this.worldWidth.subscribe(this.worldUpdater);
+        this.worldHeight.subscribe(this.worldUpdater);
+        this.scale.subscribe(this.gridUpdater);
+
+        this.worldUpdater();
     },
+
+    hasCanvas: CanvasGrid.testCanvas(),
 
     playing: ko.observable(false),
 
@@ -265,13 +293,11 @@ var Life = {
 
     ticksPerSecond: ko.observable(2),
 
-    lessTicks: function() {
-        this.ticksPerSecond(this.ticksPerSecond() - 1);
-    },
+    worldWidth: ko.observable(64),
 
-    moreTicks: function() {
-        this.ticksPerSecond(this.ticksPerSecond() + 1);
-    },
+    worldHeight: ko.observable(64),
+
+    scale: ko.observable(8),
 
     born: [
         ko.observable(false), // 0 neighbours
@@ -343,17 +369,8 @@ var Life = {
             this.worldTick();
             setTimeout(this.autoTick.bind(this), Math.floor(1000 / this.ticksPerSecond()));
         }
-    },
-    
-    run: function() {
-        var canvasContainer = document.getElementById("canvasContainer");
-
-        canvasContainer.appendChild(this.grid.canvas);
-
-        this.grid.animate();
     }
 };
 
-Life.init(new World(), new CanvasGrid());
+Life.init();
 ko.applyBindings(Life);
-Life.run();

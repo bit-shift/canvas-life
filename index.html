@@ -29,9 +29,8 @@
           <button data-bind="click: worldPause, enable: playing">Pause</button>
           <p>Cycles: <!-- ko text: cycles --><!-- /ko --></p>
           <p>Cycles per second:
-            <button data-bind="click: lessTicks, enable: ticksPerSecond() > 1 && !playing()">-</button>
-            <label data-bind="text: ticksPerSecond"></label>
-            <button data-bind="click: moreTicks, enable: ticksPerSecond() < 60 && !playing()">+</button>
+            <input type="range" step="1" min="1" max="60" data-bind="value: ticksPerSecond, disable: playing" />
+            <label data-bind="text: ticksPerSecond" />
           </p>
         </p>
         <p class="verticalBlock">
@@ -43,46 +42,59 @@
           </p>
         </p>
         <p class="verticalBlock">
-          <h3>Neighbours needed for cell birth</h3>
-          <input name="born_0" type="checkbox" data-bind="checked: born[0], disable: playing" />
-          <label>0</label>
-          <input name="born_1" type="checkbox" data-bind="checked: born[1], disable: playing" />
-          <label>1</label>
-          <input name="born_2" type="checkbox" data-bind="checked: born[2], disable: playing" />
-          <label>2</label>
-          <input name="born_3" type="checkbox" data-bind="checked: born[3], disable: playing" />
-          <label>3</label>
-          <input name="born_4" type="checkbox" data-bind="checked: born[4], disable: playing" />
-          <label>4</label>
-          <input name="born_5" type="checkbox" data-bind="checked: born[5], disable: playing" />
-          <label>5</label>
-          <input name="born_6" type="checkbox" data-bind="checked: born[6], disable: playing" />
-          <label>6</label>
-          <input name="born_7" type="checkbox" data-bind="checked: born[7], disable: playing" />
-          <label>7</label>
-          <input name="born_8" type="checkbox" data-bind="checked: born[8], disable: playing" />
-          <label>8</label>
-        </p>
-        <p class="verticalBlock">
-          <h3>Neighbours needed for cell survival</h3>
-          <input name="survive_0" type="checkbox" data-bind="checked: survive[0], disable: playing" />
-          <label>0</label>
-          <input name="survive_1" type="checkbox" data-bind="checked: survive[1], disable: playing" />
-          <label>1</label>
-          <input name="survive_2" type="checkbox" data-bind="checked: survive[2], disable: playing" />
-          <label>2</label>
-          <input name="survive_3" type="checkbox" data-bind="checked: survive[3], disable: playing" />
-          <label>3</label>
-          <input name="survive_4" type="checkbox" data-bind="checked: survive[4], disable: playing" />
-          <label>4</label>
-          <input name="survive_5" type="checkbox" data-bind="checked: survive[5], disable: playing" />
-          <label>5</label>
-          <input name="survive_6" type="checkbox" data-bind="checked: survive[6], disable: playing" />
-          <label>6</label>
-          <input name="survive_7" type="checkbox" data-bind="checked: survive[7], disable: playing" />
-          <label>7</label>
-          <input name="survive_8" type="checkbox" data-bind="checked: survive[8], disable: playing" />
-          <label>8</label>
+          <h3>World settings (height/width will <strong>reset the world</strong> when changed):</h3>
+          <p>Width:
+            <input type="range" step="1" min="16" max="128" data-bind="value: worldWidth, disable: playing" />
+            <label data-bind="text: worldWidth" />
+          </p>
+          <p>Height:
+            <input type="range" step="1" min="16" max="128" data-bind="value: worldHeight, disable: playing" />
+            <label data-bind="text: worldHeight" />
+          </p>
+          <p>Scale:
+            <input type="range" step="1" min="1" max="32" data-bind="value: scale, disable: playing" />
+            <label data-bind="text: scale" />
+          </p>
+          <p>Neighbours needed for cell birth:
+            <input name="born_0" type="checkbox" data-bind="checked: born[0], disable: playing" />
+            <label>0</label>
+            <input name="born_1" type="checkbox" data-bind="checked: born[1], disable: playing" />
+            <label>1</label>
+            <input name="born_2" type="checkbox" data-bind="checked: born[2], disable: playing" />
+            <label>2</label>
+            <input name="born_3" type="checkbox" data-bind="checked: born[3], disable: playing" />
+            <label>3</label>
+            <input name="born_4" type="checkbox" data-bind="checked: born[4], disable: playing" />
+            <label>4</label>
+            <input name="born_5" type="checkbox" data-bind="checked: born[5], disable: playing" />
+            <label>5</label>
+            <input name="born_6" type="checkbox" data-bind="checked: born[6], disable: playing" />
+            <label>6</label>
+            <input name="born_7" type="checkbox" data-bind="checked: born[7], disable: playing" />
+            <label>7</label>
+            <input name="born_8" type="checkbox" data-bind="checked: born[8], disable: playing" />
+            <label>8</label>
+          </p>
+          <p>Neighbours needed for cell survival:
+            <input name="survive_0" type="checkbox" data-bind="checked: survive[0], disable: playing" />
+            <label>0</label>
+            <input name="survive_1" type="checkbox" data-bind="checked: survive[1], disable: playing" />
+            <label>1</label>
+            <input name="survive_2" type="checkbox" data-bind="checked: survive[2], disable: playing" />
+            <label>2</label>
+            <input name="survive_3" type="checkbox" data-bind="checked: survive[3], disable: playing" />
+            <label>3</label>
+            <input name="survive_4" type="checkbox" data-bind="checked: survive[4], disable: playing" />
+            <label>4</label>
+            <input name="survive_5" type="checkbox" data-bind="checked: survive[5], disable: playing" />
+            <label>5</label>
+            <input name="survive_6" type="checkbox" data-bind="checked: survive[6], disable: playing" />
+            <label>6</label>
+            <input name="survive_7" type="checkbox" data-bind="checked: survive[7], disable: playing" />
+            <label>7</label>
+            <input name="survive_8" type="checkbox" data-bind="checked: survive[8], disable: playing" />
+            <label>8</label>
+          </p>
         </p>
       </form>
     </div>
@@ -91,6 +103,7 @@
     </div>
   </div>
 
+  <script type="text/javascript" src="html5slider.js"></script>
   <script type="text/javascript" src="knockout-2.3.0.js"></script>
   <script type="text/javascript" src="life.js"></script>
 </body>
