@@ -349,15 +349,80 @@ var Life = {
     },
 
     worldSave: function() {
-        var worldCodeArray = this.world.save().replace("64:64:", "").split("");
+        // header line
+        var worldCode = "x = " + this.world.width + ", ";
+        worldCode += "y = " + this.world.height + ", ";
 
-        var worldCode = "";
-        while (worldCodeArray.length > 0) {
-            worldCode += worldCodeArray.splice(0, Math.min(72, worldCodeArray.length)).join("");
-            if (worldCodeArray.length > 0) {
-                worldCode += "\n";
+        worldCode += "rule = B";
+        for (var b = 0; b < 9; b++) {
+            if(this.born[b]()) {
+                worldCode += b;
             }
         }
+        worldCode += "/S";
+        for (var s = 0; s < 9; s++) {
+            if(this.survive[s]()) {
+                worldCode += s;
+            }
+        }
+
+        // serialize world
+        var blocks = []
+
+        for (var y = 0; y < this.world.height; y++) {
+            for (var x = 0; x < this.world.width; x++) {
+                var blockType = "b";
+                if (this.world.data[y][x] === 1) {
+                    blockType = "o"
+                }
+
+                if (blocks.length === 0 || blocks[blocks.length-1].type !== blockType) {
+                    blocks.push({
+                        "type": blockType,
+                        "count": 1
+                    });
+                } else {
+                    blocks[blocks.length-1].count += 1;
+                }
+            }
+
+            if (blocks[blocks.length-1].type === "b") {
+                blocks.pop();  // discard line-ending dead cells
+            }
+
+            if (y === this.world.height - 1) {
+                blocks.push({
+                    "type": "!",
+                    "count": 1
+                });
+            } else {
+                if (blocks.length === 0 || blocks[blocks.length-1].type !== "$") {
+                    blocks.push({
+                        "type": "$",
+                        "count": 1
+                    });
+                } else {
+                    blocks[blocks.length-1].count += 1;
+                }
+            }
+        }
+
+        var lines = [];
+        for (var i = 0; i < blocks.length; i++) {
+            var blockText = "";
+            if (blocks[i].count > 1) {
+                blockText += blocks[i].count;
+            }
+            blockText += blocks[i].type;
+
+            if (lines.length === 0 || lines[lines.length-1].length + blockText.length > 70) {
+                lines.push(blockText);
+            } else {
+                lines[lines.length-1] += blockText;
+            }
+        }
+
+        worldCode += "\n" + lines.join("\n");
 
         this.worldCode(worldCode);
     },
