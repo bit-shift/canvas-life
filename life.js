@@ -353,12 +353,68 @@ var Life = {
         this.playing(false);
     },
 
+    saveExactWorld: ko.observable(true),
+
     worldSave: function() {
+        // determine minimum bounding rect, world-sized if exact world wanted
+        var boundingRect = {
+            "x1": 0,
+            "y1": 0,
+            "x2": this.world.width - 1,
+            "y2": this.world.height - 1
+        };
+
+        if (this.saveExactWorld() === false) {
+            var x1 = -1, y1 = -1, x2 = 0, y2 = 0;
+
+            for (var y = 0; y < this.world.height; y++) {
+                for (var x = 0; x < this.world.width; x++) {
+                    if (this.world.data[y][x] === 1) {
+                        // live cell, expand the rect if necessary
+                        var cellX1 = Math.max(0, x - 1);
+                        var cellX2 = Math.min(this.world.width - 1, x + 1);
+                        var cellY1 = Math.max(0, y - 1);
+                        var cellY2 = Math.min(this.world.height - 1, y + 1);
+
+                        if (x1 === -1) {
+                            x1 = cellX1;
+                        } else {
+                            x1 = Math.min(x1, cellX1)
+                        }
+
+                        if (y1 === -1) {
+                            y1 = cellY1;
+                        } else {
+                            y1 = Math.min(y1, cellY1)
+                        }
+
+                        x2 = Math.max(x2, cellX2);
+                        y2 = Math.max(y2, cellY2);
+                    }
+                }
+            }
+
+            if (x1 === -1) {  // no live cells
+                x1 = 0;
+            }
+            if (y1 === -1) {  // no live cells
+                y1 = 0;
+            }
+
+            boundingRect.x1 = x1;
+            boundingRect.y1 = y1;
+            boundingRect.x2 = x2;
+            boundingRect.y2 = y2;
+        }
+
+        boundingRect.width = (boundingRect.x2 + 1) - boundingRect.x1;
+        boundingRect.height = (boundingRect.y2 + 1) - boundingRect.y1;
+
         // header lines
         var worldCode = "#WW " + this.world.width + "\n";
         worldCode += "#WH " + this.world.height + "\n";
-        worldCode += "x = " + this.world.width + ", ";
-        worldCode += "y = " + this.world.height + ", ";
+        worldCode += "x = " + boundingRect.width + ", ";
+        worldCode += "y = " + boundingRect.height + ", ";
 
         worldCode += "rule = B";
         for (var b = 0; b < 9; b++) {
@@ -373,11 +429,12 @@ var Life = {
             }
         }
 
+
         // serialize world
         var blocks = []
 
-        for (var y = 0; y < this.world.height; y++) {
-            for (var x = 0; x < this.world.width; x++) {
+        for (var y = boundingRect.y1; y < boundingRect.y2 + 1; y++) {
+            for (var x = boundingRect.x1; x < boundingRect.x2 + 1; x++) {
                 var blockType = "b";
                 if (this.world.data[y][x] === 1) {
                     blockType = "o"
@@ -397,7 +454,7 @@ var Life = {
                 blocks.pop();  // discard line-ending dead cells
             }
 
-            if (y === this.world.height - 1) {
+            if (y === boundingRect.y2) {
                 blocks.push({
                     "type": "!",
                     "count": 1

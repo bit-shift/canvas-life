@@ -40,6 +40,10 @@
             <button data-bind="click: worldSave, disable: playing">Save world/pattern RLE</button>
             <button data-bind="click: worldLoad, enable: worldCode().length > 0 && !(playing())">Load world/pattern RLE</button>
           </p>
+          <p>
+            <input type="checkbox" data-bind="checked: saveExactWorld" />
+            <label>Save exact world<sup><abbr title="When disabled, the saving routine will trim dead cells from the edges of the pattern, which may cause it to be loaded in a different position.">?</abbr></sup></label>
+          </p>
         </p>
         <p class="verticalBlock">
           <h3>World settings (height/width will <strong>reset the world</strong> when changed):</h3>
