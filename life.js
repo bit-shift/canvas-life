@@ -210,6 +210,10 @@ CanvasGrid.prototype.animate = function(timestamp) {
 CanvasGrid.prototype.render = function(dt) {
     for (var y = 0; y < this.height; y++) {
         for (var x = 0; x < this.width; x++) {
+            if (this.prevData && this.prevData[y][x] === this.data[y][x]) {
+                continue;  // no need to redraw this cell
+            }
+
             var squareX = x * this.squareSize;
             var squareY = y * this.squareSize;
 
@@ -229,6 +233,11 @@ CanvasGrid.prototype.render = function(dt) {
 
             this.context.fillRect(squareX + 1, squareY + 1, this.squareSize - 2, this.squareSize - 2);
         }
+    }
+
+    this.prevData = []
+    for (var y = 0; y < this.height; y++) {
+        this.prevData.push(this.data[y].slice(0));
     }
 };
 
