@@ -435,7 +435,14 @@ var Life = {
     worldLoad: function() {
         this.loading = true;
 
-        var worldCodeLines = this.worldCode().split("\n");
+        var worldCode = this.worldCode().split("\n");
+        var worldCodeLines = [];
+        for (var i = 0; i < worldCode.length; i++) {
+            if (worldCode[i].replace(/\s+/g, "") !== "" &&
+                worldCode[i].replace(/\s+/g, "")[0] !== "#") {
+                worldCodeLines.push(worldCode[i]);
+            }
+        }
 
         // parse header
         var header = {};
