@@ -371,25 +371,21 @@ var Life = {
                 for (var x = 0; x < this.world.width; x++) {
                     if (this.world.data[y][x] === 1) {
                         // live cell, expand the rect if necessary
-                        var cellX1 = Math.max(0, x - 1);
-                        var cellX2 = Math.min(this.world.width - 1, x + 1);
-                        var cellY1 = Math.max(0, y - 1);
-                        var cellY2 = Math.min(this.world.height - 1, y + 1);
 
                         if (x1 === -1) {
-                            x1 = cellX1;
+                            x1 = x;
                         } else {
-                            x1 = Math.min(x1, cellX1)
+                            x1 = Math.min(x1, x)
                         }
 
                         if (y1 === -1) {
-                            y1 = cellY1;
+                            y1 = y;
                         } else {
-                            y1 = Math.min(y1, cellY1)
+                            y1 = Math.min(y1, y)
                         }
 
-                        x2 = Math.max(x2, cellX2);
-                        y2 = Math.max(y2, cellY2);
+                        x2 = Math.max(x2, x);
+                        y2 = Math.max(y2, y);
                     }
                 }
             }
