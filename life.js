@@ -180,11 +180,31 @@ CanvasGrid.prototype.draw = function(evt) {
 };
 
 CanvasGrid.prototype.animate = function(timestamp) {
-    this.render();
+    if (window.requestAnimationFrame) {
+        CanvasGrid.prototype.animate = function(timestamp) {
+            this.render();
 
-    (window.requestAnimationFrame ||
-     window.mozRequestAnimationFrame ||
-     window.webkitRequestAnimationFrame)(this.animate.bind(this));
+            window.requestAnimationFrame(this.animate.bind(this));
+        };
+    } else if (window.mozRequestAnimationFrame) {
+        CanvasGrid.prototype.animate = function(timestamp) {
+            this.render();
+
+            window.mozRequestAnimationFrame(this.animate.bind(this));
+        };
+    } else if (window.webkitRequestAnimationFrame) {
+        CanvasGrid.prototype.animate = function(timestamp) {
+            this.render();
+
+            window.webkitRequestAnimationFrame(this.animate.bind(this));
+        };
+    } else {
+        CanvasGrid.prototype.animate = function() {
+            // no-op
+        }
+    }
+
+    this.animate(timestamp);
 };
 
 CanvasGrid.prototype.render = function(dt) {
