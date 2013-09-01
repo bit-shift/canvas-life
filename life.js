@@ -248,6 +248,11 @@ var Life = {
         }, this);
 
         this.worldUpdater = (function() {
+            // bail out when loading a world, since that knows how to recreate everything anyway
+            if (this.loading) {
+                return;
+            }
+
             // get ints whether or not ko has fucked up the types
             var worldWidth = parseInt("" + this.worldWidth());
             var worldHeight = parseInt("" + this.worldHeight());
@@ -428,7 +433,107 @@ var Life = {
     },
 
     worldLoad: function() {
-        this.world.load("64:64:" + this.worldCode().split("\n").join(""));
+        this.loading = true;
+
+        var worldCodeLines = this.worldCode().split("\n");
+
+        // parse header
+        var header = {};
+        var headerParts = worldCodeLines[0].split(",");
+        for (var i = 0; i < headerParts.length; i++) {
+            var headerItem = headerParts[i].replace(/\s+/g, "");
+            var headerItemParts = headerItem.split("=");
+            header[headerItemParts[0]] = headerItemParts[1];
+        }
+
+        // prepare new world based on header
+        var worldWidth = parseInt(header["x"]);
+        var worldHeight = parseInt(header["y"]);
+        var rule = header["rule"].split("/");
+        var bornMap = [false, false, false, false, false, false, false, false, false];
+        var surviveMap = [false, false, false, false, false, false, false, false, false];
+        var born = [], survive = [];
+        for (var i = 0; i < rule.length; i++) {
+            var ruleType = rule[i][0];
+            var ruleBody = rule[i].slice(1);
+            for (var j = 0; j < ruleBody.length; j++) {
+                var n = parseInt(ruleBody[j]);
+                if (ruleType.toLowerCase() === "b") {
+                    bornMap[n] = true;
+                    born.push(n);
+                } else if (ruleType.toLowerCase() === "s") {
+                    surviveMap[n] = true;
+                    survive.push(n);
+                }
+            }
+        }
+
+        var newWorld = new World(worldWidth, worldHeight, born, survive);
+
+        // populate world by parsing data
+        var worldData = worldCodeLines.slice(1).join("");
+        var x = 0, y = 0;
+        var curNum = "";
+        var parsing = true;
+        for (var i = 0; i < worldData.length; i++) {
+            if (curNum === "" && (worldData[i] === "" || worldData[i] === "\t")) {
+                // skip
+            } else if (worldData[i] >= "0" && worldData[i] <= "9") {
+                curNum += worldData[i];
+            } else if (worldData[i].toLowerCase() === "b" ||
+                       worldData[i].toLowerCase() === "o" ||
+                       worldData[i] === "$" ||
+                       worldData[i] === "!") {
+                var count = 1;
+                if (curNum !== "") {
+                    count = parseInt(curNum);
+                    curNum = "";
+                }
+
+                for (var j = 0; j < count; j++) {
+                    if (worldData[i].toLowerCase() === "b") {
+                        if (x === newWorld.width) {
+                            y += 1;
+                            x = 0;
+                        }
+                        newWorld.data[y][x] = 0;
+                        x += 1;
+                    } else if (worldData[i].toLowerCase() === "o") {
+                        if (x === newWorld.width) {
+                            y += 1;
+                            x = 0;
+                        }
+                        newWorld.data[y][x] = 1;
+                        x += 1;
+                    } else if (worldData[i] === "$") {
+                        y += 1;
+                        x = 0;
+                    } else if (worldData[i] === "!") {
+                        parsing = false;
+                        break;
+                    }
+                }
+            }
+
+            if (!parsing) {
+                break;  // exit early if parsing done
+            }
+        }
+
+        this.world = newWorld;
+
+        this.worldWidth(worldWidth);
+        this.worldHeight(worldHeight);
+
+        for(var i = 0; i < 9; i++) {
+            this.born[i](bornMap[i]);
+            this.survive[i](surviveMap[i]);
+        }
+
+        this.gridUpdater();
+
+        this.loading = false;
+
         this.worldCode("");
         this.cycles(0);
     },
