@@ -354,8 +354,10 @@ var Life = {
     },
 
     worldSave: function() {
-        // header line
-        var worldCode = "x = " + this.world.width + ", ";
+        // header lines
+        var worldCode = "#WW " + this.world.width + "\n";
+        worldCode += "#WH " + this.world.height + "\n";
+        worldCode += "x = " + this.world.width + ", ";
         worldCode += "y = " + this.world.height + ", ";
 
         worldCode += "rule = B";
@@ -435,12 +437,18 @@ var Life = {
     worldLoad: function() {
         this.loading = true;
 
+        var worldWidth = 0, worldHeight = 0;
+
         var worldCode = this.worldCode().split("\n");
         var worldCodeLines = [];
         for (var i = 0; i < worldCode.length; i++) {
-            if (worldCode[i].replace(/\s+/g, "") !== "" &&
-                worldCode[i].replace(/\s+/g, "")[0] !== "#") {
+            var line = worldCode[i].replace(/^\s+/g, "");
+            if (line !== "" && line[0] !== "#") {
                 worldCodeLines.push(worldCode[i]);
+            } else if (line !== "" && line.slice(0, 3) === "#WH") {
+                worldHeight = parseInt(line.split(" ")[1]);
+            } else if (line !== "" && line.slice(0, 3) === "#WW") {
+                worldWidth = parseInt(line.split(" ")[1]);
             }
         }
 
@@ -454,8 +462,28 @@ var Life = {
         }
 
         // prepare new world based on header
-        var worldWidth = parseInt(header["x"]);
-        var worldHeight = parseInt(header["y"]);
+        var patternWidth = parseInt(header["x"]);
+        var patternHeight = parseInt(header["y"]);
+
+        if (worldWidth === 0) {
+            worldWidth = this.world.width;
+        }
+
+        if (worldHeight === 0) {
+            worldHeight = this.world.height;
+        }
+
+        if (patternWidth > worldWidth) {
+            throw "Pattern too wide.";
+        }
+
+        if (patternHeight > worldHeight) {
+            throw "Pattern too wide.";
+        }
+
+        var xOffset = Math.floor((worldWidth - patternWidth) / 2);
+        var yOffset = Math.floor((worldHeight - patternHeight) / 2);
+
         var rule = header["rule"].split("/");
         var bornMap = [false, false, false, false, false, false, false, false, false];
         var surviveMap = [false, false, false, false, false, false, false, false, false];
@@ -479,7 +507,7 @@ var Life = {
 
         // populate world by parsing data
         var worldData = worldCodeLines.slice(1).join("");
-        var x = 0, y = 0;
+        var x = xOffset, y = yOffset;
         var curNum = "";
         var parsing = true;
         for (var i = 0; i < worldData.length; i++) {
@@ -499,22 +527,14 @@ var Life = {
 
                 for (var j = 0; j < count; j++) {
                     if (worldData[i].toLowerCase() === "b") {
-                        if (x === newWorld.width) {
-                            y += 1;
-                            x = 0;
-                        }
                         newWorld.data[y][x] = 0;
                         x += 1;
                     } else if (worldData[i].toLowerCase() === "o") {
-                        if (x === newWorld.width) {
-                            y += 1;
-                            x = 0;
-                        }
                         newWorld.data[y][x] = 1;
                         x += 1;
                     } else if (worldData[i] === "$") {
                         y += 1;
-                        x = 0;
+                        x = xOffset;
                     } else if (worldData[i] === "!") {
                         parsing = false;
                         break;

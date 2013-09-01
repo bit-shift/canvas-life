@@ -37,8 +37,8 @@
           <h3>Save/Load</h3>
           <textarea class="verticalBlock" data-bind="value: worldCode, valueUpdate: 'afterkeydown'"></textarea>
           <p>
-            <button data-bind="click: worldSave, disable: playing">Save world to text</button>
-            <button data-bind="click: worldLoad, enable: worldCode().length > 0 && !(playing())">Load world from text</button>
+            <button data-bind="click: worldSave, disable: playing">Save world/pattern RLE</button>
+            <button data-bind="click: worldLoad, enable: worldCode().length > 0 && !(playing())">Load world/pattern RLE</button>
           </p>
         </p>
         <p class="verticalBlock">
