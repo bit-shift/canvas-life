@@ -541,7 +541,7 @@ var Life = {
         var xOffset = Math.floor((worldWidth - patternWidth) / 2);
         var yOffset = Math.floor((worldHeight - patternHeight) / 2);
 
-        var rule = header["rule"].split("/");
+        var rule = (header["rule"] || "B3/S23").split("/");
         var bornMap = [false, false, false, false, false, false, false, false, false];
         var surviveMap = [false, false, false, false, false, false, false, false, false];
         var born = [], survive = [];
