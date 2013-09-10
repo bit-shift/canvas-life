@@ -84,17 +84,20 @@ World.prototype.tick = function() {
         for (var x = 0; x < this.width; x++) {
             squareNeighbours[y].push(0);
 
-            for (var yOffset = -1; yOffset <= 1; yOffset++) {
-                for (var xOffset = -1; xOffset <= 1; xOffset++) {
-                    // wrap coordinates
-                    var wrappedY = (this.height + y + yOffset) % this.height;
-                    var wrappedX = (this.width + x + xOffset) % this.width;
+            // top row
+            squareNeighbours[y][x] += this.data[(this.height + y - 1) % this.height][(this.width + x - 1) % this.width];
+            squareNeighbours[y][x] += this.data[(this.height + y - 1) % this.height][x];
+            squareNeighbours[y][x] += this.data[(this.height + y - 1) % this.height][(x + 1) % this.width];
 
-                    squareNeighbours[y][x] += this.data[wrappedY][wrappedX];
-                }
-            }
+            // middle row
+            squareNeighbours[y][x] += this.data[y][(this.width + x - 1) % this.width];
+            // don't add ourself
+            squareNeighbours[y][x] += this.data[y][(x + 1) % this.width];
 
-            squareNeighbours[y][x] -= this.data[y][x];
+            // bottom row
+            squareNeighbours[y][x] += this.data[(y + 1) % this.height][(this.width + x - 1) % this.width];
+            squareNeighbours[y][x] += this.data[(y + 1) % this.height][x];
+            squareNeighbours[y][x] += this.data[(y + 1) % this.height][(x + 1) % this.width];
         }
     }
 
@@ -102,15 +105,17 @@ World.prototype.tick = function() {
         for (var x = 0; x < this.width; x++) {
             if (this.data[y][x] === 1) {
                 if (this.survive.indexOf(squareNeighbours[y][x]) < 0) {
-                    this.set(x, y, 0);
+                    this.data[y][x] = 0;
                 }
             } else {
                 if (this.born.indexOf(squareNeighbours[y][x]) > -1) {
-                    this.set(x, y, 1);
+                    this.data[y][x] = 1;
                 }
             }
         }
     }
+
+    this.emitUpdate();
 };
 
 
